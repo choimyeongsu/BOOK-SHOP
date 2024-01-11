@@ -3,7 +3,7 @@ const {StatusCodes}=require('http-status-codes');
 
 const addToCart = (req,res)=>{
     const {book_id,quantity,user_id}=req.body;
-    const sql = `INSERT INTO cartItems(book_id,quantity,user_id) VALUE(${book_id},${quantity},${user_id})`;
+    const sql = `INSERT INTO cartItems(book_id,quantity,user_id) VALUE(?,?,?)`;
     let values=[book_id,quantity,user_id];
     conn.query(sql,values,
         (err,results,fields)=>{
@@ -29,7 +29,7 @@ const getCartItems=(req,res)=>{
 }
 const removeCartItem=(req,res)=>{
     const {id} = req.params;
-    const sql = `DELETE FROM cartItems WHERE cartItems.id=${id}`;
+    const sql = `DELETE FROM cartItems WHERE cartItems.id=?`;
     let values=[id];
     conn.query(sql,values,
         (err,results,fields)=>{

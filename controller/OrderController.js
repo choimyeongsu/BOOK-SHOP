@@ -10,61 +10,82 @@ const order = async (req,res)=>{
         database:'Bookshop',
         dateStrings:true
     });
+
     const {items,delivery,totalQuantity,totalPrice,userId,firstBookTitle}=req.body;
-    let delivery_id;
-    let order_id;
-    let sql ="INSERT INTO delivery(address,receiver,contact) VALUES(?,?,?)"
+   
+    let sql ="INSERT INTO delivery(address,receiver,contact) VALUE(?,?,?)"
 
     let values = [delivery.address, delivery.receiver, delivery.contact];
-    let [results] = await conn.query(sql,values,
-        (err,results,fields)=>{
-            if(err){
-                console.log(err);
-                return res.status(StatusCodes.BAD_REQUEST).end();
-            }
-            console.log(results);
+    let [results] = await conn.execute(sql,values)
+    let delivery_id=results.insertId;
+    
 
-            
-        })
-    delivery_id=results.insertId;
-    console.log(results);
-    console.log(delivery_id);
     sql = `INSERT INTO orders(book_title, total_quantity, total_price, user_id, delivery_id)
      VALUE(?,?,?,?,?)`;
     values =[firstBookTitle,totalQuantity,totalPrice,userId,delivery_id];
-    let [results2] = await conn.query(sql,values,
-        (err,results,fields)=>{
-            if(err){
-                console.log(err);
-                return res.status(StatusCodes.BAD_REQUEST).end();
-            }
-            console.log(results);
-            
-            
-        })
-    order_id=results2.insertId;
+    [results] = await conn.execute(sql,values)
+    let order_id=results.insertId;
+    
+    sql = `SELECT book_id,quantity FROM cartItems WHERE id IN(?)`;
+    let orderItems = await conn.query(sql,[items]);
+    console.log(orderItems);
+
     sql =`INSERT INTO orderedBook(order_id,book_id,quantity) VALUE(?)`;
     values=[];
-    items.forEach((item)=>{
-        values.push([order_id,item.book_id,item.quantity]);
+    orderItems[0].forEach((item)=>{
+        console.log(item.book_id);
+        values.push([1,item.book_id,item.quantity]);
     })
 
-    conn.query(sql,values,
-        (err,results,fields)=>{
-            if(err){
-                console.log(err);
-                return res.status(StatusCodes.BAD_REQUEST).end();
-            } 
-            return res.status(StatusCodes.OK).json(results);
-        })
+    console.log(values);
+    results=await conn.query(sql,values);
+    
+    results = await deleteCartItems(conn,items);
+    
+    return res.status(StatusCodes.OK).json(results[0]);
 };
 
-const getOrders = (req,res)=>{
-    res.json('주문목록조회');
+const deleteCartItems = async(conn,items)=>{
+    let sql =`DELETE FROM cartItems WHERE id IN(?)`;
+    let values=items;
+    let result = await conn.query(sql,values);
+    return result;
+}
+
+const getOrders = async (req,res)=>{
+    const conn = await mysql.createConnection({
+        host:"localhost",
+        user:'root',
+        password:'root',
+        database:'Bookshop',
+        dateStrings:true
+    });
+
+    // let {id}=req.body;
+    let sql = `SELECT orders.id,book_title,total_quantity,total_price,created_at,address,receiver,contact
+     FROM orders LEFT OUTER JOIN delivery ON orders.delivery_id=delivery.id`;
+    let [rows,fields] = await conn.execute(sql,[]);
+    console.log(rows);
+    return res.status(StatusCodes.OK).json(rows);
 };
 
-const getOrderDetail = (req,res)=>{
-    res.json('주문상세조회');
+const getOrderDetail = async (req,res)=>{
+    const conn = await mysql.createConnection({
+        host:"localhost",
+        user:'root',
+        password:'root',
+        database:'Bookshop',
+        dateStrings:true
+    });
+    let {id}=req.params;
+    let sql = `SELECT books.id,books.title,books.author,books.price,orderedBook.quantity
+     FROM orderedBook LEFT OUTER JOIN books
+     ON orderedBook.book_id=books.id
+      WHERE order_id=?`;
+    let values = [id];
+    let [rows,fields] = await conn.execute(sql,values);
+    console.log(rows);
+    return res.status(StatusCodes.OK).json(rows);
 };
 
 module.exports={
