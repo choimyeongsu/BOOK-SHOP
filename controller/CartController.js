@@ -3,10 +3,9 @@ const { StatusCodes } = require("http-status-codes");
 const decodeJwt = require("../DecodeJwt");
 
 const addToCart = (req, res) => {
-	const { book_id, quantity } = req.body;
-
 	const decodedJwt = decodeJwt(req, res);
 	if (decodedJwt.id) {
+		const { book_id, quantity } = req.body;
 		const sql = `INSERT INTO cartItems(book_id,quantity,user_id) VALUE(?,?,?)`;
 		let values = [book_id, quantity, decodedJwt.id];
 		conn.query(sql, values, (err, results, fields) => {
@@ -19,10 +18,9 @@ const addToCart = (req, res) => {
 	}
 };
 const getCartItems = (req, res) => {
-	const { selected } = req.body;
-
 	const decodedJwt = decodeJwt(req, res);
 	if (decodedJwt.id) {
+		const { selected } = req.body;
 		let sql = `SELECT cartItems.id, cartItems.book_id, books.title, books.summary, cartItems.quantity, books.price
 		FROM cartItems LEFT OUTER JOIN books 
 		ON cartItems.book_id=books.id `;
@@ -54,17 +52,20 @@ const getCartItems = (req, res) => {
 	}
 };
 const removeCartItem = (req, res) => {
-	const cartItemId = req.params.id;
+	const decodedJwt = (req, res);
+	if (decodedJwt.id) {
+		const cartItemId = req.params.id;
 
-	const sql = `DELETE FROM cartItems WHERE cartItems.id=?`;
-	let values = [cartItemId];
-	conn.query(sql, values, (err, results, fields) => {
-		if (err) {
-			console.log(err);
-			return res.status(StatusCodes.BAD_REQUEST).end();
-		}
-		return res.status(StatusCodes.OK).json(results);
-	});
+		const sql = `DELETE FROM cartItems WHERE cartItems.id=?`;
+		let values = [cartItemId];
+		conn.query(sql, values, (err, results, fields) => {
+			if (err) {
+				console.log(err);
+				return res.status(StatusCodes.BAD_REQUEST).end();
+			}
+			return res.status(StatusCodes.OK).json(results);
+		});
+	}
 };
 
 module.exports = {

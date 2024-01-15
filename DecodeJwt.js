@@ -1,11 +1,15 @@
 const { StatusCodes } = require("http-status-codes");
 const jwt = require("jsonwebtoken");
-const decodeJwt = (req, res) => {
+const decodeJwt = (req, res, noToken) => {
 	try {
 		const receivedJwt = req.headers["authorization"];
-		const decodedJwt = jwt.verify(receivedJwt, process.env.PRIVATE_KEY);
-		console.log(decodedJwt);
-		return decodedJwt;
+		console.log(receivedJwt);
+		if (receivedJwt) {
+			const decodedJwt = jwt.verify(receivedJwt, process.env.PRIVATE_KEY);
+			return decodedJwt;
+		} else {
+			throw new ReferenceError("jwt must be provided");
+		}
 	} catch (err) {
 		console.log(err);
 		if (err instanceof jwt.JsonWebTokenError) {

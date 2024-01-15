@@ -3,10 +3,9 @@ const { StatusCodes } = require("http-status-codes");
 const decodeJwt = require("../DecodeJwt");
 
 const addLike = (req, res) => {
-	const bookId = req.params.id;
-
-	const decodedJwt = decodeJwt(req);
+	const decodedJwt = decodeJwt(req, res);
 	if (decodedJwt.id) {
+		const bookId = req.params.id;
 		const sql = `INSERT INTO likes VALUES(?,?)`;
 		let values = [decodedJwt.id, Number(bookId)];
 		conn.query(sql, values, (err, results, fileds) => {
@@ -20,10 +19,9 @@ const addLike = (req, res) => {
 };
 
 const removeLike = (req, res) => {
-	const bookId = req.params.id;
-
-	const decodedJwt = decodeJwt(req);
+	const decodedJwt = decodeJwt(req, res);
 	if (decodedJwt.id) {
+		const bookId = req.params.id;
 		const sql = `DELETE FROM likes WHERE user_id= ? AND liked_book_id=?`;
 		let values = [decodedJwt.id, Number(bookId)];
 		conn.query(sql, values, (err, results, fields) => {
