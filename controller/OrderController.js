@@ -71,8 +71,9 @@ const getOrders = async (req, res) => {
 	const decodedJwt = decodeJwt(req, res);
 	if (decodedJwt.id) {
 		let sql = `SELECT orders.id,book_title,total_quantity,total_price,created_at,address,receiver,contact
-        FROM orders LEFT OUTER JOIN delivery ON orders.delivery_id=delivery.id`;
-		let [rows, fields] = await conn.execute(sql, []);
+        FROM orders LEFT OUTER JOIN delivery ON orders.delivery_id=delivery.id 
+		WHERE user_id=?`;
+		let [rows, fields] = await conn.execute(sql, [decodedJwt.id]);
 		console.log(rows);
 		return res.status(StatusCodes.OK).json(rows);
 	}
