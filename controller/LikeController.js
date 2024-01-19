@@ -7,7 +7,7 @@ const addLike = (req, res) => {
 	if (decodedJwt.id) {
 		const bookId = req.params.id;
 		const sql = `INSERT INTO likes VALUES(?,?)`;
-		let values = [decodedJwt.id, Number(bookId)];
+		const values = [decodedJwt.id, Number(bookId)];
 		conn.query(sql, values, (err, results, fileds) => {
 			if (err) {
 				console.log(err);
@@ -23,7 +23,7 @@ const removeLike = (req, res) => {
 	if (decodedJwt.id) {
 		const bookId = req.params.id;
 		const sql = `DELETE FROM likes WHERE user_id= ? AND liked_book_id=?`;
-		let values = [decodedJwt.id, Number(bookId)];
+		const values = [decodedJwt.id, Number(bookId)];
 		conn.query(sql, values, (err, results, fields) => {
 			if (err) {
 				console.log(err);

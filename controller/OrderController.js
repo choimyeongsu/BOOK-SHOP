@@ -18,21 +18,21 @@ const order = async (req, res) => {
 		const { items, delivery, totalQuantity, totalPrice, firstBookTitle } = req.body;
 		let sql = "INSERT INTO delivery(address,receiver,contact) VALUE(?,?,?)";
 		let values = [delivery.address, delivery.receiver, delivery.contact];
-		let [results] = await conn.execute(sql, values);
-		let delivery_id = results.insertId;
+		let [rows, fields] = await conn.execute(sql, values);
+		const delivery_id = rows.insertId;
 
 		//주문
 		sql = `INSERT INTO orders(book_title, total_quantity, total_price, user_id, delivery_id)
          VALUE(?,?,?,?,?)`;
 		values = [firstBookTitle, totalQuantity, totalPrice, decodedJwt.id, delivery_id];
-		[results] = await conn.execute(sql, values);
-		let order_id = results.insertId;
+		[rows, fields] = await conn.execute(sql, values);
+		const order_id = rows.insertId;
 		console.log("주문번호");
 		console.log(order_id);
 
 		//장바구니에서 선택한 상품 목록 조회
 		sql = `SELECT book_id,quantity FROM cartItems WHERE id IN(?)`;
-		let [orderItems, fields] = await conn.query(sql, [items]);
+		const [orderItems] = await conn.query(sql, [items]);
 		console.log(orderItems);
 
 		//주문된 책 목록 조회
@@ -42,21 +42,21 @@ const order = async (req, res) => {
 			values.push([order_id, item.book_id, item.quantity]);
 		});
 		console.log(values);
-		[results] = await conn.query(sql, [values]);
-		console.log(results);
+		[rows, fields] = await conn.query(sql, [values]);
+		console.log(rows);
+		if (rows.affectedRows >= 1) {
+			//장바구니에서 선택한 상품 삭제
+			const deleteResult = await deleteCartItems(conn, items);
 
-		//장바구니에서 선택한 상품 삭제
-		let result = await deleteCartItems(conn, items);
-		console.log(result);
-
-		return res.status(StatusCodes.OK).json(results[0]);
+			return res.status(StatusCodes.OK).json(rows[0]);
+		} else return res.status(StatusCodes.BAD_REQUEST).end();
 	}
 };
 
 const deleteCartItems = async (conn, items) => {
-	let sql = `DELETE FROM cartItems WHERE id IN(?)`;
-	let values = items;
-	let result = await conn.query(sql, [values]);
+	const sql = `DELETE FROM cartItems WHERE id IN(?)`;
+	const values = items;
+	const result = await conn.query(sql, [values]);
 	return result;
 };
 
@@ -70,10 +70,10 @@ const getOrders = async (req, res) => {
 	});
 	const decodedJwt = decodeJwt(req, res);
 	if (decodedJwt.id) {
-		let sql = `SELECT orders.id,book_title,total_quantity,total_price,created_at,address,receiver,contact
+		let sql = `SELECT orders.id,(book_title) AS bookTitle, (total_quantity) AS totalQuantity, (total_price) AS totalPrice , (created_at) AS createdAt,address,receiver,contact
         FROM orders LEFT OUTER JOIN delivery ON orders.delivery_id=delivery.id 
 		WHERE user_id=?`;
-		let [rows, fields] = await conn.execute(sql, [decodedJwt.id]);
+		const [rows, fields] = await conn.execute(sql, [decodedJwt.id]);
 		console.log(rows);
 		return res.status(StatusCodes.OK).json(rows);
 	}
@@ -89,13 +89,13 @@ const getOrderDetail = async (req, res) => {
 	});
 	const decodedJwt = decodeJwt(req, res);
 	if (decodedJwt.id) {
-		let orderId = req.params.id;
-		let sql = `SELECT books.id,books.title,books.author,books.price,orderedBook.quantity
+		const orderId = req.params.id;
+		const sql = `SELECT (books.id) AS bookId,books.title,books.author,books.price,orderedBook.quantity
          FROM orderedBook LEFT OUTER JOIN books
          ON orderedBook.book_id=books.id
           WHERE orderedBook.order_id=?`;
-		let values = [orderId];
-		let [rows, fields] = await conn.execute(sql, values);
+		const values = [orderId];
+		const [rows, fields] = await conn.execute(sql, values);
 		console.log(rows);
 		return res.status(StatusCodes.OK).json(rows);
 	}
