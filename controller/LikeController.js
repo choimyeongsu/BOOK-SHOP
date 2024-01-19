@@ -1,6 +1,5 @@
-const conn = require("../mariadb");
-const { StatusCodes } = require("http-status-codes");
-const decodeJwt = require("../DecodeJwt");
+const decodeJwt = require("../middlewares/DecodeJwt");
+const query = require("../utils/Query");
 
 const addLike = (req, res) => {
 	const decodedJwt = decodeJwt(req, res);
@@ -8,13 +7,7 @@ const addLike = (req, res) => {
 		const bookId = req.params.id;
 		const sql = `INSERT INTO likes VALUES(?,?)`;
 		const values = [decodedJwt.id, Number(bookId)];
-		conn.query(sql, values, (err, results, fileds) => {
-			if (err) {
-				console.log(err);
-				return res.status(StatusCodes.BAD_REQUEST).end();
-			}
-			return res.status(StatusCodes.CREATED).json(results);
-		});
+		query(sql, values, req, res);
 	}
 };
 
@@ -24,13 +17,7 @@ const removeLike = (req, res) => {
 		const bookId = req.params.id;
 		const sql = `DELETE FROM likes WHERE user_id= ? AND liked_book_id=?`;
 		const values = [decodedJwt.id, Number(bookId)];
-		conn.query(sql, values, (err, results, fields) => {
-			if (err) {
-				console.log(err);
-				return res.status(StatusCodes.BAD_REQUEST).end();
-			}
-			return res.status(StatusCodes.OK).json(results);
-		});
+		query(sql, values, req, res);
 	}
 };
 

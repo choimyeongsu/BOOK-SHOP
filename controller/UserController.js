@@ -2,8 +2,7 @@ const conn = require("../mariadb"); //db모듈
 const { StatusCodes } = require("http-status-codes"); //status code 모듈
 const jwt = require("jsonwebtoken"); //jwt 모듈
 const crypto = require("crypto"); // crypot 모듈 : 암호화
-const dotenv = require("dotenv"); // dotenv 모듈
-dotenv.config();
+const query = require("../utils/Query");
 
 const join = (req, res) => {
 	const { email, password } = req.body;
@@ -14,14 +13,7 @@ const join = (req, res) => {
 	const hashPassword = crypto.pbkdf2Sync(password, salt, 10000, 10, "sha512").toString("base64");
 
 	const values = [email, hashPassword, salt];
-	conn.query(sql, values, (err, results, fields) => {
-		if (err) {
-			console.log(err);
-			return res.status(StatusCodes.BAD_REQUEST).end();
-		}
-		if (results.affectedRows) return res.status(StatusCodes.CREATED).json(results);
-		else return res.status(StatusCodes.BAD_REQUEST).end();
-	});
+	query(sql, values, req, res);
 };
 
 const login = (req, res) => {
@@ -87,15 +79,7 @@ const passwordReset = (req, res) => {
 	const salt = crypto.randomBytes(10).toString("base64");
 	const hashPassword = crypto.pbkdf2Sync(password, salt, 10000, 10, "sha512").toString("base64");
 	const values = [hashPassword, salt, email];
-	conn.query(sql, values, (err, results) => {
-		if (err) {
-			console.log(err);
-			return res.status(StatusCodes.BAD_REQUEST).end();
-		}
-
-		if (results.affectedRows == 0) return res.status(StatusCodes.BAD_REQUEST).end();
-		else return res.status(StatusCodes.OK).json(results);
-	});
+	query(sql, values, res, req);
 };
 
 module.exports = {

@@ -1,6 +1,7 @@
 const conn = require("../mariadb");
 const { StatusCodes } = require("http-status-codes");
-const decodeJwt = require("../DecodeJwt");
+const decodeJwt = require("../middlewares/DecodeJwt");
+const query = require("../utils/Query");
 
 const addToCart = (req, res) => {
 	const decodedJwt = decodeJwt(req, res);
@@ -8,13 +9,7 @@ const addToCart = (req, res) => {
 		const { bookId, quantity } = req.body;
 		const sql = `INSERT INTO cartItems(book_id,quantity,user_id) VALUE(?,?,?)`;
 		const values = [bookId, quantity, decodedJwt.id];
-		conn.query(sql, values, (err, results, fields) => {
-			if (err) {
-				console.log(err);
-				return res.status(StatusCodes.BAD_REQUEST).end();
-			}
-			return res.status(StatusCodes.CREATED).json(results);
-		});
+		query(sql, values, req, res);
 	}
 };
 const getCartItems = (req, res) => {
@@ -58,13 +53,7 @@ const removeCartItem = (req, res) => {
 
 		const sql = `DELETE FROM cartItems WHERE cartItems.id=?`;
 		const values = [cartItemId];
-		conn.query(sql, values, (err, results, fields) => {
-			if (err) {
-				console.log(err);
-				return res.status(StatusCodes.BAD_REQUEST).end();
-			}
-			return res.status(StatusCodes.OK).json(results);
-		});
+		query(sql, values, req, res);
 	}
 };
 

@@ -1,7 +1,7 @@
 const mysql = require("mysql2/promise");
 //const conn = require('../mariadb');
 const { StatusCodes } = require("http-status-codes");
-const decodeJwt = require("../DecodeJwt");
+const decodeJwt = require("../middlewares/DecodeJwt");
 
 const order = async (req, res) => {
 	const conn = await mysql.createConnection({
@@ -19,16 +19,16 @@ const order = async (req, res) => {
 		let sql = "INSERT INTO delivery(address,receiver,contact) VALUE(?,?,?)";
 		let values = [delivery.address, delivery.receiver, delivery.contact];
 		let [rows, fields] = await conn.execute(sql, values);
-		const delivery_id = rows.insertId;
+		const deliveryId = rows.insertId;
 
 		//주문
 		sql = `INSERT INTO orders(book_title, total_quantity, total_price, user_id, delivery_id)
          VALUE(?,?,?,?,?)`;
-		values = [firstBookTitle, totalQuantity, totalPrice, decodedJwt.id, delivery_id];
+		values = [firstBookTitle, totalQuantity, totalPrice, decodedJwt.id, deliveryId];
 		[rows, fields] = await conn.execute(sql, values);
-		const order_id = rows.insertId;
+		const orderId = rows.insertId;
 		console.log("주문번호");
-		console.log(order_id);
+		console.log(orderId);
 
 		//장바구니에서 선택한 상품 목록 조회
 		sql = `SELECT book_id,quantity FROM cartItems WHERE id IN(?)`;
@@ -39,7 +39,7 @@ const order = async (req, res) => {
 		sql = `INSERT INTO orderedBook(order_id,book_id,quantity) VALUES ?`;
 		values = [];
 		orderItems.forEach((item) => {
-			values.push([order_id, item.book_id, item.quantity]);
+			values.push([orderId, item.book_id, item.quantity]);
 		});
 		console.log(values);
 		[rows, fields] = await conn.query(sql, [values]);

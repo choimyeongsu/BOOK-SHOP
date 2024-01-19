@@ -1,7 +1,7 @@
 const mysql = require("mysql2/promise");
 //const conn = require("../mariadb");
 const { StatusCodes } = require("http-status-codes");
-const decodeJwt = require("../DecodeJwt");
+const decodeJwt = require("../middlewares/DecodeJwt");
 
 const allBooks = async (req, res) => {
 	const conn = await mysql.createConnection({
@@ -59,7 +59,7 @@ const bookDetail = async (req, res) => {
 	});
 	const noToken = true;
 	const decodedJwt = decodeJwt(req, res, noToken);
-	const book_id = req.params.id;
+	const bookId = req.params.id;
 	const values = [];
 	let sql;
 	if (decodedJwt == undefined) {
@@ -67,14 +67,14 @@ const bookDetail = async (req, res) => {
             (SELECT count(*) FROM likes WHERE liked_book_id=books.id) AS likes
              FROM books LEFT OUTER JOIN category ON books.category_id=category.id
              WHERE books.id=?`;
-		values.push(book_id);
+		values.push(bookId);
 	} else if (decodedJwt.id) {
 		sql = `SELECT *,
             (SELECT count(*) FROM likes WHERE liked_book_id=books.id) AS likes, 
             (SELECT EXISTS (SELECT * FROM likes WHERE user_id=? AND liked_book_id=?)) AS liked
              FROM books LEFT OUTER JOIN category ON books.category_id=category.id
              WHERE books.id=?`;
-		values.push(decodedJwt.id, book_id, book_id);
+		values.push(decodedJwt.id, bookId, bookId);
 	}
 
 	const [rows, fields] = await conn.execute(sql, values);
