@@ -1,85 +1,55 @@
-const conn = require("../mariadb"); //db모듈
 const { StatusCodes } = require("http-status-codes"); //status code 모듈
-const jwt = require("jsonwebtoken"); //jwt 모듈
-const crypto = require("crypto"); // crypot 모듈 : 암호화
-const query = require("../utils/Query");
+const userService = require("../services/UserService");
 
-const join = (req, res) => {
+// 컨트롤러 = req수신, req 데이터 검증, 결과 반환
+
+const join = async (req, res) => {
 	const { email, password } = req.body;
-	const sql = `INSERT INTO users (email,password,salt) VALUES(?,?,?)`;
-
-	//암호화된 비밀번호와 salt값을 같이 DB에 저장
-	const salt = crypto.randomBytes(10).toString("base64");
-	const hashPassword = crypto.pbkdf2Sync(password, salt, 10000, 10, "sha512").toString("base64");
-
-	const values = [email, hashPassword, salt];
-	query(sql, values, req, res);
+	try {
+		const data = await userService.join(email, password);
+		return res.status(StatusCodes.CREATED).json(data);
+	} catch (err) {
+		console.log(err);
+		return res.status(StatusCodes.BAD_REQUEST).end();
+	}
 };
 
-const login = (req, res) => {
+const login = async (req, res) => {
 	const { email, password } = req.body;
-	const sql = `SELECT * FROM users WHERE email=?`;
-	const values = [email, password];
-	conn.query(sql, values, (err, results, fields) => {
-		if (err) {
-			console.log(err);
-			return res.status(StatusCodes.BAD_REQUEST).end();
-		}
-		const loginUser = results[0];
-		//salt값 꺼내서 비밀번호를 암호화하고 디비비밀번호랑 비교
-		const hashPassword = crypto.pbkdf2Sync(password, loginUser.salt, 10000, 10, "sha512").toString("base64");
-
-		if (loginUser && loginUser.password == hashPassword) {
-			const token = jwt.sign(
-				{
-					email: loginUser.email,
-					id: loginUser.id,
-				},
-				process.env.PRIVATE_KEY,
-				{
-					expiresIn: "20m",
-					issuer: "choims",
-				}
-			);
-			res.cookie("token", token, {
-				httpOnly: true,
-			});
-			console.log(token);
-			return res.status(StatusCodes.CREATED).json({
-				message: `${loginUser.email}님 로그인 되었습니다.`,
-			});
-		} else {
-			return res.status(StatusCodes.UNAUTHORIZED).end();
-		}
-	});
+	try {
+		const data = await userService.login(email, password);
+		res.cookie("token", data.token, {
+			httpOnly: true,
+		});
+		return res.status(StatusCodes.CREATED).json({
+			message: `${data.user.email}님 로그인 되었습니다.`,
+		});
+	} catch (err) {
+		return res.status(StatusCodes.UNAUTHORIZED).end();
+	}
 };
-const passwordResetRequest = (req, res) => {
+const passwordResetRequest = async (req, res) => {
 	const { email } = req.body;
-	const sql = "SELECT * FROM users WHERE email=?";
-	conn.query(sql, email, (err, results) => {
-		if (err) {
-			console.log(err);
-			return res.status(StatusCodes.BAD_REQUEST).end();
-		}
-
-		const user = results[0];
-		if (user) {
-			return res.status(StatusCodes.OK).json({
-				email: email,
-			});
-		} else {
-			return res.status(StatusCodes.UNAUTHORIZED).end();
-		}
-	});
+	try {
+		const data = await userService.passwordResetRequest(email);
+		console.log(data);
+		return res.status(StatusCodes.OK).json({
+			email: data.email,
+		});
+	} catch (err) {
+		console.log(err);
+		return res.status(StatusCodes.UNAUTHORIZED).end();
+	}
 };
-const passwordReset = (req, res) => {
+const passwordReset = async (req, res) => {
 	const { email, password } = req.body;
-
-	const sql = "UPDATE users SET password=? , salt=? WHERE email=?";
-	const salt = crypto.randomBytes(10).toString("base64");
-	const hashPassword = crypto.pbkdf2Sync(password, salt, 10000, 10, "sha512").toString("base64");
-	const values = [hashPassword, salt, email];
-	query(sql, values, res, req);
+	try {
+		const data = await userService.passwordReset(email, password);
+		return res.status(StatusCodes.OK).end();
+	} catch (err) {
+		console.log(err);
+		return res.status(StatusCodes.UNAUTHORIZED).end();
+	}
 };
 
 module.exports = {
