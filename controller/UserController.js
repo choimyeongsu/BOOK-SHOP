@@ -10,7 +10,7 @@ const join = async (req, res) => {
 		return res.status(StatusCodes.CREATED).json(data);
 	} catch (err) {
 		console.log(err);
-		return res.status(StatusCodes.BAD_REQUEST).end();
+		return res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
 	}
 };
 
@@ -25,30 +25,29 @@ const login = async (req, res) => {
 			message: `${data.user.email}님 로그인 되었습니다.`,
 		});
 	} catch (err) {
-		return res.status(StatusCodes.UNAUTHORIZED).end();
+		return res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
 	}
 };
 const passwordResetRequest = async (req, res) => {
 	const { email } = req.body;
 	try {
 		const data = await userService.passwordResetRequest(email);
-		console.log(data);
 		return res.status(StatusCodes.OK).json({
 			email: data.email,
 		});
 	} catch (err) {
 		console.log(err);
-		return res.status(StatusCodes.UNAUTHORIZED).end();
+		return res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
 	}
 };
 const passwordReset = async (req, res) => {
 	const { email, password } = req.body;
 	try {
 		const data = await userService.passwordReset(email, password);
-		return res.status(StatusCodes.OK).end();
+		return res.status(StatusCodes.OK).json(data);
 	} catch (err) {
 		console.log(err);
-		return res.status(StatusCodes.UNAUTHORIZED).end();
+		return res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
 	}
 };
 

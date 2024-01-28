@@ -1,59 +1,38 @@
-const conn = require("../mariadb");
 const { StatusCodes } = require("http-status-codes");
 const decodeJwt = require("../middlewares/DecodeJwt");
-const query = require("../utils/Query");
+const cartService = require("../services/CartService");
 
-const addToCart = (req, res) => {
+const addToCart = async (req, res) => {
 	const decodedJwt = decodeJwt(req, res);
-	if (decodedJwt.id) {
-		const { bookId, quantity } = req.body;
-		const sql = `INSERT INTO cartItems(book_id,quantity,user_id) VALUE(?,?,?)`;
-		const values = [bookId, quantity, decodedJwt.id];
-		query(sql, values, req, res);
+	const { bookId, quantity } = req.body;
+	try {
+		const data = await cartService.addToCart(bookId, quantity, decodedJwt);
+		return res.status(StatusCodes.OK).json(data);
+	} catch (err) {
+		console.log(err);
+		return res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
 	}
 };
-const getCartItems = (req, res) => {
+const getCartItems = async (req, res) => {
 	const decodedJwt = decodeJwt(req, res);
-	if (decodedJwt.id) {
-		const { selected } = req.body;
-		let sql = `SELECT cartItems.id, (cartItems.book_id) AS bookId, books.title, books.summary, cartItems.quantity, books.price
-		FROM cartItems LEFT OUTER JOIN books 
-		ON cartItems.book_id=books.id `;
-		const values = [decodedJwt.id];
-		//선택한 장바구니 목록 조회
-		if (selected) {
-			sql = sql + `WHERE cartItems.user_id=? AND cartItems.id IN(?)`;
-			values.push(selected);
-			conn.query(sql, values, (err, results, fields) => {
-				if (err) {
-					console.log(err);
-					return res.status(StatusCodes.BAD_REQUEST).end();
-				}
-				console.log(results);
-				return res.status(StatusCodes.OK).json(results);
-			});
-			//장바구니 목록 조회
-		} else {
-			sql = sql + `WHERE cartItems.user_id=?`;
-			conn.query(sql, values, (err, results, fields) => {
-				if (err) {
-					console.log(err);
-					return res.status(StatusCodes.BAD_REQUEST).end();
-				}
-				console.log(results);
-				return res.status(StatusCodes.OK).json(results);
-			});
-		}
+	const { selected } = req.body;
+	try {
+		const data = await cartService.getCartItems(selected, decodedJwt);
+		return res.status(StatusCodes.OK).json(data);
+	} catch (err) {
+		console.log(err);
+		return res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
 	}
 };
-const removeCartItem = (req, res) => {
-	const decodedJwt = (req, res);
-	if (decodedJwt.id) {
-		const cartItemId = req.params.id;
-
-		const sql = `DELETE FROM cartItems WHERE cartItems.id=?`;
-		const values = [cartItemId];
-		query(sql, values, req, res);
+const removeCartItem = async (req, res) => {
+	const decodedJwt = decodeJwt(req, res);
+	const cartItemId = req.params.id;
+	try {
+		const data = await cartService.removeCartItem(cartItemId, decodedJwt);
+		return res.status(StatusCodes.OK).json(data);
+	} catch (err) {
+		console.log(err);
+		return res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
 	}
 };
 

@@ -1,23 +1,29 @@
 const decodeJwt = require("../middlewares/DecodeJwt");
-const query = require("../utils/Query");
+const { StatusCodes } = require("http-status-codes");
+const likeService = require("../services/LikeService");
 
-const addLike = (req, res) => {
+// bookId가 없는 경우 예외처리 필요
+const addLike = async (req, res) => {
 	const decodedJwt = decodeJwt(req, res);
-	if (decodedJwt.id) {
-		const bookId = req.params.id;
-		const sql = `INSERT INTO likes VALUES(?,?)`;
-		const values = [decodedJwt.id, Number(bookId)];
-		query(sql, values, req, res);
+	const bookId = req.params.id;
+	try {
+		const data = await likeService.addLike(decodedJwt, bookId);
+		return res.status(StatusCodes.OK).end();
+	} catch (err) {
+		console.log(err);
+		return res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
 	}
 };
 
-const removeLike = (req, res) => {
+const removeLike = async (req, res) => {
 	const decodedJwt = decodeJwt(req, res);
-	if (decodedJwt.id) {
-		const bookId = req.params.id;
-		const sql = `DELETE FROM likes WHERE user_id= ? AND liked_book_id=?`;
-		const values = [decodedJwt.id, Number(bookId)];
-		query(sql, values, req, res);
+	const bookId = req.params.id;
+	try {
+		const data = await likeService.removeLike(decodedJwt, bookId);
+		return res.status(StatusCodes.OK).end();
+	} catch (err) {
+		console.log(err);
+		return res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
 	}
 };
 

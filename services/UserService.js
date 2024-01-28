@@ -2,6 +2,7 @@ const crypto = require("crypto"); // crypot 모듈 : 암호화
 const jwt = require("jsonwebtoken"); //jwt 모듈
 const createConnection = require("../mariadb");
 
+//email, password 예외처리필요
 const join = async (email, password) => {
 	const conn = await createConnection();
 	try {
@@ -12,22 +13,22 @@ const join = async (email, password) => {
 		const hashPassword = crypto.pbkdf2Sync(password, salt, 10000, 10, "sha512").toString("base64");
 
 		const values = [email, hashPassword, salt];
-		const [rows, fields] = await conn.execute(sql, values);
-		return rows;
+		const [result, fields] = await conn.execute(sql, values);
+		return result;
 	} catch (err) {
 		console.log(err);
-		throw err;
+		return err;
 	}
 };
-
+//email,password 예외처리 필요
 const login = async (email, password) => {
 	const conn = await createConnection();
 	try {
 		const sql = `SELECT * FROM users WHERE email=?`;
 		const values = [email];
-		const [rows, fields] = await conn.execute(sql, values);
+		const [result, fields] = await conn.execute(sql, values);
 
-		const loginUser = rows[0];
+		const loginUser = result[0];
 
 		//salt값 꺼내서 비밀번호를 암호화하고 디비비밀번호랑 비교
 		const hashPassword = crypto.pbkdf2Sync(password, loginUser.salt, 10000, 10, "sha512").toString("base64");
@@ -55,18 +56,20 @@ const login = async (email, password) => {
 		return err;
 	}
 };
+//이메일 예외처리필요
 const passwordResetRequest = async (email) => {
 	const conn = await createConnection();
 	try {
 		const sql = "SELECT * FROM users WHERE email=?";
-		const [rows, fields] = await conn.execute(sql, [email]);
-		const user = rows[0];
+		const [result, fields] = await conn.execute(sql, [email]);
+		const user = result[0];
 		return user;
 	} catch (err) {
 		console.log(err);
 		return err;
 	}
 };
+//이메일 ,비밀번호 에외처리 필요
 const passwordReset = async (email, password) => {
 	const conn = await createConnection();
 	try {
@@ -76,15 +79,19 @@ const passwordReset = async (email, password) => {
 		const hashPassword = crypto.pbkdf2Sync(password, salt, 10000, 10, "sha512").toString("base64");
 
 		const values = [hashPassword, salt, email];
-		const [rows, fields] = await conn.execute(sql, values);
-
+		console.log(values);
+		const [result, fields] = await conn.execute(sql, values);
+		console.log(result);
 		return rows;
 	} catch (err) {
 		console.log(err);
 		return err;
 	}
 };
-module.exports.join = join;
-module.exports.login = login;
-module.exports.passwordResetRequest = passwordResetRequest;
-module.exports.passwordReset = passwordReset;
+
+module.exports = {
+	join,
+	login,
+	passwordResetRequest,
+	passwordReset,
+};

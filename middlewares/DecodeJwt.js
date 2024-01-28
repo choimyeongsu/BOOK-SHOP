@@ -1,14 +1,15 @@
 const { StatusCodes } = require("http-status-codes");
 const jwt = require("jsonwebtoken");
-const decodeJwt = (req, res, noToken) => {
+const decodeJwt = (req, res) => {
 	try {
 		const receivedJwt = req.headers["authorization"];
-		console.log(receivedJwt);
 		if (receivedJwt) {
 			const decodedJwt = jwt.verify(receivedJwt, process.env.PRIVATE_KEY);
 			return decodedJwt;
 		} else {
-			throw new ReferenceError("jwt must be provided");
+			return res.status(StatusCodes.UNAUTHORIZED).json({
+				message: "토큰값이 필요합니다",
+			});
 		}
 	} catch (err) {
 		console.log(err);
